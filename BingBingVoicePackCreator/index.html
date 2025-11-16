@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+
+<html lang="en" class="">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BingBong Voice Pack Generator</title>
+    
+    <script>
+        window.tailwind = {
+            darkMode: 'class'
+        }
+    </script>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <script>
+        if (localStorage.theme === 'dark' || 
+           (!('theme' in localStorage) && 
+            window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+    </script>
+    
+    <link rel="stylesheet" href="style.css">
+
+</head>
+<body class="p-4 sm:p-8 min-h-screen">
+
+    <div class="max-w-4xl mx-auto">
+        <header class="text-center mb-10 relative">
+            <h1 class="text-4xl text-white header-text-shadow darumadrop-one-regular">BingBong Voice Pack Creator</h1>
+            <p class="text-gray-200 mt-2 header-text-shadow">Generate your voice pack configuration and optional Thunderstore mod package.</p>
+            <button onclick="clearForm()" class="mt-2 px-3 py-1 text-xs text-white border border-white rounded-full hover:bg-white hover:bg-opacity-20 transition dark:border-gray-400 dark:hover:bg-gray-700">
+                Clear
+            </button>
+            
+            <div class="absolute top-0 right-0">
+                <label for="themeToggle" class="theme-toggle-label">
+                    <input type="checkbox" id="themeToggle">
+                    <span class="theme-toggle-slider">
+                        <svg class="theme-toggle-icon theme-toggle-moon w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                        <svg class="theme-toggle-icon theme-toggle-sun w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM10 16a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM3.05 4.536a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zm12.374 10.607a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM4.536 14.95a1 1 0 010-1.414l.707-.707a1 1 0 00-1.414-1.414l-.707.707a1 1 0 011.414 1.414z" clip-rule="evenodd"></path></svg>
+                    </span>
+                </label>
+            </div>
+        </header>
+        
+        <div id="importDropzone" class="card p-6 md:p-8 rounded-xl mb-8 dropzone">
+            <section>
+                <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2 mb-4 dark:text-gray-200 dark:border-gray-700">Import Existing Mod</h2>
+                <div class="flex items-center space-x-4">
+                    <input type="file" id="importZipInput" accept=".zip,.json" onchange="handleImport(this)" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-900 dark:file:text-indigo-200 dark:hover:file:bg-indigo-800">
+                    <svg id="importSpinner" class="animate-spin h-5 w-5 text-indigo-600 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </div>
+                <p class="text-xs text-gray-500 mt-2 dark:text-gray-400">Upload or drag & drop a `.zip` package, `manifest.json`, or `response_sound_pack.json` to load settings.</p>
+                
+                <div class="dropzone-overlay">Drop .zip or .json file</div>
+            </section>
+        </div>
+
+        <div id="generator-form" class="card p-6 md:p-8 rounded-xl space-y-8">
+        
+            <section class="space-y-4">
+                <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2 mb-4 dark:text-gray-200 dark:border-gray-700">1. Core Mod Identity</h2>
+                
+                <div>
+                    <label for="modName" class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Mod Name (e.g., My_Custom_Pack):</label>
+                    <input type="text" id="modName" value="Custom_BingBong_Pack"
+                           class="w-full p-3 border border-gray-300 rounded-xl focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400" 
+                           placeholder="Use underscores, no spaces. Required for configuration file.">
+                </div>
+            </section>
+
+            <section id="audioDropzone" class="dropzone">
+                <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2 mb-4 dark:text-gray-200 dark:border-gray-700">2. Audio Files & Subtitles</h2>
+                <div id="audioEntries" class="space-y-4">
+                </div>
+                <div class="tooltip-container mt-4" id="addEntryWrapper">
+                    <button onclick="AUDIO_ENTRIES_CONTAINER.appendChild(createAudioEntryElement())" class="w-full sm:w-auto px-4 py-2 bg-green-500 text-white font-semibold rounded-xl hover:bg-green-600 transition duration-150 flex items-center justify-center" 
+                            id="addEntryButton"
+                            data-disabled="false">
+                        <svg id="addIcon" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        Add Audio Entry
+                    </button>
+                    <div class="tooltip-content" data-visible="false" id="addEntryTooltip"></div>
+                </div>
+                
+                <div class="dropzone-overlay">Drop audio files (.mp3, .wav, .ogg...)</div>
+                
+                <div class="mt-8">
+                    <h3 class="text-xl font-medium text-gray-700 mb-2 flex items-center dark:text-gray-300">
+                        <button type="button" onclick="toggleJsonEditor(this)" class="p-1 mr-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
+                            <svg id="jsonEditorArrow" class="w-5 h-5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <span>Live Config Editor</span>
+                        <button onclick="copyJsonContents()" id="copyJsonButton" class="ml-auto px-3 py-1 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300 transition duration-100 flex items-center disabled:opacity-50 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500" data-disabled="true">
+                            <svg id="copyIcon" class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v4a1 1 0 001 1h3m-3-1l3-3m0 6l-3-3m-3 6h6a2 2 0 002-2V8a2 2 0 00-2-2H8a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                            <span id="copyButtonText">Copy Contents</span>
+                        </button>
+                    </h3>
+                    <div id="jsonEditorContainer">
+                        <textarea id="jsonOutput" rows="8" oninput="handleJsonInput(this)"
+                                  class="w-full p-4 border border-gray-300 bg-gray-50 rounded-lg text-sm font-mono focus:bg-white focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-200 dark:placeholder-gray-400 dark:focus:bg-gray-800"></textarea>
+                        <p id="jsonError" class="text-xs text-red-500 h-4 mt-1 pl-1"></p>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="space-y-6">
+                <div class="flex items-center space-x-3 border-b pb-2 mb-4 dark:border-gray-700">
+                    <input type="checkbox" id="isModPackage" onchange="toggleModOptions(this.checked)" class="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                    <label for="isModPackage" class="text-2xl font-semibold text-gray-800 cursor-pointer dark:text-gray-200">3. Create Full Thunderstore Mod Package?</label>
+                </div>
+                
+                <div id="modOptions" class="space-y-4 p-4 border border-gray-200 rounded-xl bg-gray-50 hidden dark:bg-gray-900 dark:border-gray-700">
+                    <h3 class="text-xl font-medium text-gray-700 dark:text-gray-300">Manifest (`manifest.json`) Details</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="version" class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-400">Version Number (e.g., 1.0.0):</label>
+                            <input type="text" id="version" value="1.0.0"
+                                   class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400">
+                        </div>
+                        <div>
+                            <label for="author" class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-400">Author Name (for dependency string):</label>
+                            <input type="text" id="author" value="YourAuthorName"
+                                   class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
+                                   placeholder="Replace 'YourAuthorName'">
+                        </div>
+                    </div>
+                    <div>
+                        <label for="description" class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-400">Short Description (Max 250 chars):</label>
+                        <textarea id="description" rows="1" oninput="autoExpandTextarea(this); updateUIState();"
+                                  class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"></textarea>
+                    </div>
+                    <div>
+                        <label for="websiteUrl" class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-400">Website URL (Optional):</label>
+                        <input type="text" id="websiteUrl"
+                               class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
+                               placeholder="e.g., https://github.com/your-repo" oninput="updateUIState()">
+                    </div>
+                    
+                    <h3 class="text-xl font-medium text-gray-700 pt-4 border-t border-gray-200 dark:text-gray-300 dark:border-gray-700">Dependencies</h3>
+                    <div id="dependencyEntries" class="space-y-2">
+                    </div>
+                    <button type="button" onclick="addDependencyEntry()" class="w-full sm:w-auto px-4 py-2 text-sm bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition duration-150 flex items-center justify-center dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        Add Dependency
+                    </button>
+                    
+                    <div id="dllDropzone" class="dropzone pt-4 border-t border-gray-200 dark:border-gray-700">
+                        <h3 class="text-xl font-medium text-gray-700 dark:text-gray-300">Optional Files</h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                            <div class="space-y-2">
+                                <label for="iconFile" class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-400">Icon (`icon.png`, 256x256):</label>
+                                <input type="file" id="iconFile" accept="image/png" onchange="previewIcon(this)" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900 dark:file:text-blue-200 dark:hover:file:bg-blue-800">
+                            </div>
+                            <div class="flex items-center justify-center col-span-1">
+                                <div class="relative inline-block">
+                                    <img id="iconPreview" class="h-16 w-16 rounded-lg border border-gray-300 object-cover hidden dark:border-gray-600" alt="Icon Preview">
+                                    <button type="button" id="iconRemoveButton" onclick="clearIconFile(); updateUIState();" 
+                                            class="absolute -top-1 -right-1 p-0.5 bg-red-500 text-white rounded-full hidden hover:bg-red-700 transition-all"
+                                            aria-label="Remove icon">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-2 mt-4">
+                            <label for="dllFiles" class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-400">Mod DLL(s) (`.dll`):</label>
+                            <p class="text-xs text-gray-500 -mt-1 mb-1 dark:text-gray-500">Click to select or drag and drop. DLLs are not saved and must be re-selected on page load.</p>
+                            <input type="file" id="dllFiles" multiple accept=".dll" 
+                                   onchange="addFilesToDllStore(this.files); this.value = null; updateUIState();" 
+                                   class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900 dark:file:text-blue-200 dark:hover:file:bg-blue-800">
+                            <ul id="dllFileList" class="text-sm text-gray-600 pl-2 mt-2 space-y-1 dark:text-gray-300">
+                            </ul>
+                        </div>
+
+                        <div class="dropzone-overlay">Drop Icon (.png) or DLL(s)</div>
+                    </div>
+                    
+                    <div class="p-3 border border-gray-100 rounded-lg bg-white mt-4 dark:bg-gray-800 dark:border-gray-700">
+                        <div class="flex items-center justify-between space-x-4 mb-2">
+                            <div class="flex items-center space-x-4">
+                                <input type="checkbox" id="includeReadme" onchange="toggleMarkdownEditor('readme', this.checked)" class="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                <label for="includeReadme" class="text-base font-semibold text-gray-700 cursor-pointer dark:text-gray-300">Include README.md (Editable)</label>
+                            </div>
+                            <button type="button" id="readmePreviewButton" onclick="toggleMarkdownPreview('readme', this)" class="px-3 py-1 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300 transition duration-100 hidden dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">
+                                Preview
+                            </button>
+                        </div>
+                        <textarea id="readmeContent" rows="1" oninput="autoExpandTextarea(this); updateUIState();"
+                                  placeholder="## Mod Name&#10;&#10;A fun, custom voice pack for BingBong!&#10;&#10;### Installation&#10;1. Ensure the required dependency, BingBongVoiceLineAPI, is installed.&#10;2. Install this mod package using your mod manager."
+                                  class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-border-blue-500 text-sm hidden dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"></textarea>
+                        <div id="readmePreview" class="prose w-full p-2 border border-gray-300 rounded-lg bg-gray-50 text-sm hidden dark:border-gray-600 dark:bg-gray-900" style="min-height: 140px;"></div>
+                    </div>
+
+                    <div class="p-3 border border-gray-100 rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700">
+                        <div class="flex items-center justify-between space-x-4 mb-2">
+                             <div class="flex items-center space-x-4">
+                                <input type="checkbox" id="includeChangelog" onchange="toggleMarkdownEditor('changelog', this.checked)" class="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                <label for="includeChangelog" class="text-base font-semibold text-gray-700 cursor-pointer dark:text-gray-300">Include CHANGELOG.md (Editable)</label>
+                            </div>
+                            <button type="button" id="changelogPreviewButton" onclick="toggleMarkdownPreview('changelog', this)" class="px-3 py-1 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300 transition duration-100 hidden dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">
+                                Preview
+                            </button>
+                        </div>
+                        <textarea id="changelogContent" rows="1" oninput="autoExpandTextarea(this); updateUIState();"
+                                  placeholder="## [1.0.0] - [Current Date]&#10;### Added&#10;- Initial release of custom voice lines."
+                                  class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm hidden dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"></textarea>
+                        <div id="changelogPreview" class="prose w-full p-2 border border-gray-300 rounded-lg bg-gray-50 text-sm hidden dark:border-gray-600 dark:bg-gray-900" style="min-height: 100px;"></div>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="pt-8 border-t dark:border-gray-700">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4 dark:text-gray-200">4. Generate & Download</h2>
+                
+                <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                    
+                    <div class="flex-1 tooltip-container" id="downloadConfigWrapper">
+                        <button onclick="downloadConfigOnly()"
+                                class="w-full px-6 py-3 bg-indigo-500 text-white font-bold rounded-xl hover:bg-indigo-600 transition duration-150 disabled:opacity-50"
+                                id="downloadConfigButton"
+                                data-disabled="true">
+                            Download Config File Only (.json)
+                        </button>
+                        <div class="tooltip-content" data-visible="false" id="downloadConfigTooltip"></div>
+                    </div>
+                    
+                    <div class="flex-1 tooltip-container" id="modPackageWrapper">
+                        <button onclick="generateModPackage()"
+                                class="w-full px-6 py-3 bg-blue-700 text-white font-bold rounded-xl hover:bg-blue-800 transition duration-150 flex items-center justify-center disabled:opacity-50"
+                                id="modPackageButton"
+                                data-disabled="true">
+                            <svg id="downloadIcon" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            <svg id="loadingSpinner" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            Generate Mod Package (ZIP)
+                        </button>
+                         <div class="tooltip-content" data-visible="false" id="modPackageTooltip"></div>
+                    </div>
+                </div>
+
+            </section>
+        </div>
+    </div>
+
+    <template id="audioEntryTemplate">
+        <div class="entry-container">
+            <div class="audio-entry p-4 border border-gray-200 rounded-xl bg-white shadow-sm flex flex-col md:flex-row md:items-center space-y-3 md:space-y-0 md:space-x-4 dark:bg-gray-700 dark:border-gray-600">
+                
+                <div class="md:w-5/12 flex flex-col justify-center">
+                    
+                    <p class="text-xs font-medium text-gray-500 mb-0 dark:text-gray-400">Audio Filename (e.g., line_01.mp3):</p>
+                    
+                    <div class="w-full space-y-1">
+                        <input type="text" class="filename-input w-full p-2 border border-gray-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white dark:placeholder-gray-400" 
+                               placeholder="Enter exact filename (Required)">
+                    
+                        <div class="flex items-center space-x-2 pt-1 overflow-hidden">
+							<input type="file" accept=".mp3,.wav,.ogg,.aiff,.aif,.xm,.mod,.it,.s3m,.m4a" 
+								   class="audio-file hidden" onchange="handleFileUpload(this); this.value = null;">
+                            <button type="button" onclick="this.previousElementSibling.click()" 
+                                    class="upload-button flex-shrink-0 px-3 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-lg hover:bg-yellow-200 transition duration-100 whitespace-nowrap dark:bg-yellow-300 dark:text-yellow-900 dark:hover:bg-yellow-400">
+                                Upload File
+                            </button>
+                            <span class="file-status flex-1 min-w-0 truncate text-xs text-green-600 hidden dark:text-green-400">File attached.</span>
+                        </div>
+                    </div>
+
+                </div>
+                
+                <div class="flex-shrink-0 flex items-center space-x-2 md:w-32 self-center">
+                    <input type="checkbox" class="subtitle-toggle w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                    <label class="text-sm font-medium text-gray-700 whitespace-nowrap dark:text-gray-300">Add Subtitle</label>
+                </div>
+                
+                <div class="flex-1 self-center">
+                    <input type="text" placeholder="Subtitle text (optional)" disabled 
+                           class="subtitle-input w-full p-2 border border-gray-200 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-60 disabled:bg-gray-100 dark:bg-gray-800 dark:border-gray-600 dark:disabled:bg-gray-800 dark:disabled:opacity-60 dark:text-white">
+                </div>
+                
+                <button type="button" class="play-button p-2 text-blue-500 hover:text-blue-700 transition duration-150 self-center hidden dark:text-blue-400 dark:hover:text-blue-300" onclick="playAudio(this)">
+                    <svg class="play-icon w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" /></svg>
+                    <svg class="pause-icon w-6 h-6 hidden" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h1a1 1 0 001-1V8a1 1 0 00-1-1H8zm3 0a1 1 0 00-1 1v4a1 1 0 001 1h1a1 1 0 001-1V8a1 1 0 00-1-1h-1z" clip-rule="evenodd" /></svg>
+                </button>
+
+                <button onclick="removeAudioEntry(this)" class="p-2 text-red-500 hover:text-red-700 transition duration-150 self-center dark:text-red-400 dark:hover:text-red-300">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </button>
+            </div>
+            
+            <p class="text-xs text-red-500 audio-file-error pl-4 h-4 opacity-0 transition-opacity duration-150"></p> 
+        </div>
+    </template>
+    
+    <template id="dependencyEntryTemplate">
+        <div class="dependency-entry flex items-center space-x-2">
+            <input type="text" class="dependency-input w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white dark:placeholder-gray-400" 
+                   placeholder="e.g., AuthorName-ModName-1.0.0">
+            <button onclick="removeDependencyEntry(this)" class="p-2 text-red-500 hover:text-red-700 transition duration-150 self-center dark:text-red-400 dark:hover:text-red-300">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            </button>
+        </div>
+    </template>
+
+    <div id="messageModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center hidden z-50 p-4" aria-labelledby="modalTitle" role="dialog" aria-modal="true">
+        <div class="relative mx-auto p-6 border w-full max-w-md shadow-lg rounded-xl bg-white dark:bg-gray-800 dark:border-gray-700">
+            <h3 id="modalTitle" class="text-lg font-medium text-gray-900 dark:text-white">Notification</h3>
+            <div class="mt-2">
+                <div id="modalMessage" class="text-sm text-gray-600 dark:text-gray-300" style="white-space: pre-wrap;">Your message here.</div>
+            </div>
+            <div class="mt-4 flex justify-end space-x-2">
+                <button id="modalCancelButton" class="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">
+                    Cancel
+                </button>
+                <button id="modalConfirmButton" class="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                    Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="script.js" defer></script>
+    
+</body>
+<!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "f6f74a57a5ed429394b2b315a281c4a4"}'></script><!-- End Cloudflare Web Analytics -->
+</html>
